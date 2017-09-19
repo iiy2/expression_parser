@@ -65,6 +65,9 @@ class Parser {
                 if ($this->isNumber($expression[$i - 1])) {
                     end($result);
                     $index = key($result);
+                    if (is_null($index)) {
+                        $index = 0;
+                    }
                     $result[$index] .= $expression[$i];
                 } else {
                     $result[] = $expression[$i];
@@ -82,7 +85,7 @@ class Parser {
             }
 
             if ($expression[$i] === "(") {
-                if ($this->isNumber($expression[$i - 1]) || $expression[$i - 1] === ")") {
+                if ($i > 0 && ($this->isNumber($expression[$i - 1]) || $expression[$i - 1] === ")")) {
                     throw new Exception("Invalid syntax");
                 } else {
                     $result[] = $expression[$i];
@@ -180,7 +183,7 @@ class Parser {
 
         //check if the expression contains only allowed chars
         //preg_match("", $expression);
-        if (!preg_match("/^[0-9\+\-\*\/]*$/", $expression)) {
+        if (!preg_match("/^[0-9\+\-\*\/\(\)]*$/", $expression)) {
            throw new Exception("The expression should contain only digits and arithmetic operators");
         }
 
@@ -209,7 +212,7 @@ class Parser {
         $expression = str_replace(array("+-", "--"), array("-", "+"), $expression);
 
         //processing "*-" and "/*" operator combinations and replace them with *(0-a) and /(0-a) correspondingly
-        $expression = preg_replace(array("((\*\-)([0-9])+)", "(\/\-([0-9])+)"), array("*(0-$2)", "/(0-$2)"), $expression);
+        $expression = preg_replace(array("((\*\-)([0-9]+))", "((\/\-)([0-9]+))"), array("*(0-$2)", "/(0-$2)"), $expression);
 
         return $expression;
     }
@@ -266,4 +269,3 @@ class Parser {
     }
 
 }
-
