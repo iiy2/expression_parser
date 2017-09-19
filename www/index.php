@@ -55,18 +55,12 @@ class Parser {
      * @throws Exception
      */
     public function convertToArray($expression) {
+        //validating
+        $expression = $this->validateExpression($expression);
+
         $strLen = strlen($expression);
         $result = array();
         for ($i = 0; $i < $strLen; $i++) {
-            if ($i === 0) {
-                if (!$this->isValidFirstSymbol($expression[$i])) {
-                    throw new Exception("Incorrect first char");
-                } else {
-                    $result[] = $expression[$i];
-                    continue;
-                }
-            }
-
             if ($this->isNumber($expression[$i])) {
                 if ($this->isNumber($expression[$i - 1])) {
                     end($result);
@@ -174,6 +168,53 @@ class Parser {
     }
 
     /**
+     * performs basic validation for expression
+     *
+     * @param string $expression
+     * @return string
+     * @throws Exception
+     */
+    private function validateExpression($expression) {
+        //escape spaces
+        $expression = str_replace(" ", "", $expression);
+
+        //check if the expression contains only allowed chars
+        //preg_match("", $expression);
+        if (!preg_match("/^[0-9\+\-\*\/]*$/", $expression)) {
+           throw new Exception("The expression should contain only digits and arithmetic operators");
+        }
+
+        //check the first symbol of the expression - to be moved from the convertToArray method
+        if (!$this->isValidFirstSymbol($expression[0])) {
+            throw new Exception("Incorrect first char");
+        } else if ($expression[0] === "-") {
+            $expression = "0" . $expression;
+        }
+
+        //process negative values
+        $expression = $this->processNegativeValues($expression);
+
+        return $expression;
+    }
+
+    /**
+     * convert operators combinations into more simple expressions
+     * for example: "a*-b" and "a/*b" will be converted into "a*(0-b)" and "a/(0-b)"
+     *
+     * @param string $expression
+     * @return string
+     */
+    private function processNegativeValues($expression) {
+        //replace the "+-" to "-" and the "--" to "+"
+        $expression = str_replace(array("+-", "--"), array("-", "+"), $expression);
+
+        //processing "*-" and "/*" operator combinations and replace them with *(0-a) and /(0-a) correspondingly
+        $expression = preg_replace(array("((\*\-)([0-9])+)", "(\/\-([0-9])+)"), array("*(0-$2)", "/(0-$2)"), $expression);
+
+        return $expression;
+    }
+
+    /**
      * Checks if the provided symbols is in the list of allowed operators
      *
      * @param string $char
@@ -190,7 +231,7 @@ class Parser {
      * @return bool
      */
     private function isValidFirstSymbol($char) {
-        $valid = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(");
+        $valid = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-");
         return in_array($char, $valid);
     }
 
@@ -225,11 +266,4 @@ class Parser {
     }
 
 }
-
-$str = "200+12*((1/8)+1)-19";
-$parser = new Parser();
-$validateArray = $parser->convertToArray($str);
-$polishReverseFormArray = $parser->createStack($validateArray);
-$result = $parser->calculateStack($polishReverseFormArray);
-echo $result;
 
