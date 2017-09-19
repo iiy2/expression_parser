@@ -1,5 +1,5 @@
 <?php
-include_once "index.php";
+include_once "../www/index.php";
 error_reporting(E_ALL & ~E_NOTICE);
 
 class expressionTest extends PHPUnit_Framework_TestCase {
